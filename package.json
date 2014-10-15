@@ -1,0 +1,23 @@
+{
+  "name": "dotenv-assert",
+  "version": "1.0.0",
+  "description": "Requires specified environment settings to exist",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/busterc/dotenv-assert"
+  },
+  "homepage": "https://github.com/busterc/dotenv-assert",
+  "keywords": [
+    "dotenv",
+    ".env",
+    "env",
+    "environment",
+    "variables",
+    "config",
+    "settings",
+    "assert"
+  ],
+  "author": "buster",
+  "license": "ISC"
+}
