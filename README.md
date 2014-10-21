@@ -1,11 +1,20 @@
 # dotenv-assert
 
-Requires specified environment settings to exist.
+Requires specified environment settings to exist in node applications.
+
+## Version 2.0.0
+- This module version no longer accepts an Array of settings to assert. Instead, an Options Object: `{ filePath: 'somefile.ext' }` or empty arguments are required.
 
 ## Prerequisites
 - **dotenv** is not required, but recommended
   - [npmjs.org/package/dotenv](https://www.npmjs.org/package/dotenv)
   - [github/motdolta/dotenv](https://github.com/motdotla/dotenv)
+
+## How does it work
+An exception is thrown if any of these cases are true:
+  - An `assert.env` file is not found
+  - The keys listed in the `assert.env` file are not set on `process.env`
+
 
 ## Installation
 ```sh
@@ -14,31 +23,70 @@ $ npm install --save dotenv-assert
 
 ## Usage
 ```javascript
-require('dotenv-assert')([
-  'PORT',
-  'DB',
-  'WHATEVA'
-]);
-```
+/**
+*  load an assert.env file from CWD or
+*  from the nearest parent directory where assert.env is found
+*/
+require('dotenv-assert')();
 
-## Express Example
-```javascript
-var dotenv = require('dotenv');
-dotenv.load();
-require('dotenv-assert')([
-  'PORT',
-  'DB'
-]);
+/**
+*  or, specify a custom file location
+*/
+require('dotenv-assert')({
+  filePath: '../configs/assert.config'
+});
 
-var express = require('express');
-var app = express();
-
-app.set('port', process.env.PORT);
-
-var server = app.listen(app.get('port'), function() {
-  debug('Express server listening on port ' + server.address().port);
+/**
+*  or, specify a custom file name, that will be loaded from
+*  CWD or the nearest parent directory where it is found.
+*/
+require('dotenv-assert')({
+  filePath: 'env.config'
 });
 ```
+
+## Simple HTTP Server Example
+
+This example uses [**dotenv**](https://github.com/motdotla/dotenv) for applying settings, hence the `~/app/.env` file listed below:
+
+- ~/app/.env
+
+  ```
+  IP=127.0.0.1
+  PORT=1337
+  ```
+
+- ~/app/assert.env
+
+  ```
+  IP
+  PORT
+  ```
+
+- ~/app/index.js
+
+  ```javascript
+  var dotenv = require('dotenv');
+  dotenv.load();
+
+  require('dotenv-assert')();
+
+  var http = require('http');
+
+  http.createServer(function (request, response) {
+    response.writeHead(200, {'Content-Type': 'text/plain'});
+    response.end('Hello World\n');
+  }).listen(process.env.PORT, process.env.IP);
+
+  console.log('Server running at http://' + process.env.IP + ':' + process.env.PORT + '/');
+  ```
+
+- _Start the server and see that all is well_
+
+  ```sh
+  $ node index.js
+  Server running at http://127.0.0.1:1337/
+  ```
 
 ## LICENSE
 

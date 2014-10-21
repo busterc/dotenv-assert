@@ -1,6 +1,6 @@
 {
   "name": "dotenv-assert",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Requires specified environment settings to exist",
   "main": "index.js",
   "repository": {
@@ -19,5 +19,13 @@
     "assert"
   ],
   "author": "buster",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "find-parent-dir": "^0.3.0"
+  },
+  "devDependencies": {
+    "gulp": "^3.8.8",
+    "gulp-jshint": "^1.8.5",
+    "jshint-stylish": "^1.0.0"
+  }
 }
