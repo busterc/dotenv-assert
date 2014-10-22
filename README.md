@@ -2,8 +2,9 @@
 
 Requires specified environment settings to exist in node applications.
 
-## Version 2.0.0
-- This module version no longer accepts an Array of settings to assert. Instead, an Options Object: `{ filePath: 'somefile.ext' }` or empty arguments are required.
+## Version 2.1.0
+- This module version now accepts an optional callback function.
+- It is recommended that you wrap your application in the callback, to insure that the async functions used by dotenv-assert complete before attempting to start.
 
 ## Prerequisites
 - **dotenv** is not required, but recommended
@@ -26,8 +27,16 @@ $ npm install --save dotenv-assert
 /**
 *  load an assert.env file from CWD or
 *  from the nearest parent directory where assert.env is found
+*  (without a specified callback, not recommended)
 */
 require('dotenv-assert')();
+
+// or, same as above (with a callback, recommended)
+require('dotenv-assert')({}, function() {
+  console.log('Environment Settings Asserted!');
+});
+
+// you may include a callback on all further examples
 
 /**
 *  or, specify a custom file location
@@ -69,16 +78,16 @@ This example uses [**dotenv**](https://github.com/motdotla/dotenv) for applying 
   var dotenv = require('dotenv');
   dotenv.load();
 
-  require('dotenv-assert')();
+  require('dotenv-assert')({}, function() {
+    var http = require('http');
 
-  var http = require('http');
+    http.createServer(function (request, response) {
+      response.writeHead(200, {'Content-Type': 'text/plain'});
+      response.end('Hello World\n');
+    }).listen(process.env.PORT, process.env.IP);
 
-  http.createServer(function (request, response) {
-    response.writeHead(200, {'Content-Type': 'text/plain'});
-    response.end('Hello World\n');
-  }).listen(process.env.PORT, process.env.IP);
-
-  console.log('Server running at http://' + process.env.IP + ':' + process.env.PORT + '/');
+    console.log('Server running at http://' + process.env.IP + ':' + process.env.PORT + '/');
+  });
   ```
 
 - _Start the server and see that all is well_
@@ -87,6 +96,11 @@ This example uses [**dotenv**](https://github.com/motdotla/dotenv) for applying 
   $ node index.js
   Server running at http://127.0.0.1:1337/
   ```
+
+## CHANGELOG
+
+- 2.0.0
+  No longer accepts an Array of settings to assert. Instead, an Options Object: `{ filePath: 'somefile.ext' }` or empty arguments are required.
 
 ## LICENSE
 

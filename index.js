@@ -1,5 +1,5 @@
 'use strict';
-module.exports = function(options) {
+module.exports = function(options, callback) {
   var fs = require('fs');
   var findParentDir = require('find-parent-dir');
   var CURRENT_WORKING_DIRECTORY = process.cwd();
@@ -9,6 +9,7 @@ module.exports = function(options) {
   var assertFilePath = 'assert.env';
 
   options = options || {};
+  callback = callback || function() {};
 
   function getSettingsFromFile(options) {
     var file = '' + fs.readFileSync(options.assertFilePath);
@@ -52,6 +53,11 @@ module.exports = function(options) {
     this.name = '  Options Error';
   }
 
+  function CallbackError(message) {
+    this.message = message;
+    this.name = '  Callback Error';
+  }
+
   function FileNotFoundError(message) {
     this.message = message;
     this.name = '  File Not Found Error';
@@ -59,52 +65,53 @@ module.exports = function(options) {
 
   if (arguments.length > 0) {
     if (typeof options !== 'object' || Object.prototype.toString.call(options) === '[object Array]') {
-      errorMessage = '\n    As of version 2.0.0, you can only pass an Options Object ' +
+      errorMessage = '    As of version 2.1.0, you can only pass an Options Object and Callback Function ' +
         'or empty arguments to dotenv-assert. Please see the official README.md for details.';
       throw new OptionsError(errorMessage);
     }
 
-    if (!options.filePath) {
-      errorMessage = '\n    An Options Object must contain a "filePath" property, ' +
-        'e.g { filepath: "../settings/assert.env" }';
-      throw new OptionsError(errorMessage);
-    }
+    assertFilePath = options.filePath || assertFilePath;
 
-    assertFilePath = options.filePath;
+    if (typeof callback !== 'function') {
+      errorMessage = '    The callback is not a function';
+      throw new CallbackError(errorMessage);
+    }
   }
 
-  // look for explicit file location
   if (assertFilePath.indexOf('/') > -1) {
-    fs.exists(assertFilePath, function(exists) {
-      if (exists) {
-        settings = getSettingsFromFile({
-          'assertFilePath': assertFilePath
-        });
-        assertSettings(settings);
 
-        return true;
+    // look for explicit file location
+    fs.exists(assertFilePath, function(exists) {
+      if (!exists) {
+        errorMessage = assertFilePath + ' does not exist.';
+        throw new FileNotFoundError(errorMessage);
       }
 
-      errorMessage = assertFilePath + ' does not exist.';
-      throw new FileNotFoundError(errorMessage);
+      settings = getSettingsFromFile({
+        'assertFilePath': assertFilePath
+      });
+      assertSettings(settings);
+
+      callback();
+    });
+  } else {
+
+    // find the file in $CWD or the nearest parent directory
+    findParentDir(CURRENT_WORKING_DIRECTORY, assertFilePath, function(error, directory) {
+      if (error || directory === null) {
+        errorMessage = assertFilePath + ' cannot be found.';
+        throw new FileNotFoundError(errorMessage);
+      }
+
+      assertFilePath = directory + '/' + assertFilePath;
+
+      settings = getSettingsFromFile({
+        'assertFilePath': assertFilePath
+      });
+
+      assertSettings(settings);
+
+      callback();
     });
   }
-
-  // find the file in $CWD or the nearest parent directory
-  findParentDir(CURRENT_WORKING_DIRECTORY, assertFilePath, function(error, directory) {
-    if (error || directory === null) {
-      errorMessage = assertFilePath + ' cannot be found.';
-      throw new FileNotFoundError(errorMessage);
-    }
-
-    assertFilePath = directory + '/' + assertFilePath;
-
-    settings = getSettingsFromFile({
-      'assertFilePath': assertFilePath
-    });
-
-    assertSettings(settings);
-
-    return true;
-  });
 };
