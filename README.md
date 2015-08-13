@@ -2,41 +2,44 @@
 
 Requires specified environment settings to exist in node applications.
 
-## Version 2.1.0
-- This module version now accepts an optional callback function.
-- It is recommended that you wrap your application in the callback, to insure that the async functions used by dotenv-assert complete before attempting to start.
+## Version 3.0.0
+
+- This module now fully supports sync and async execution
+  - Synchronous execution throws errors (if errors)
+  - Asnychronous execution passes errors to the error-first callback
 
 ## Prerequisites
-- **dotenv** is not required, but recommended
-  - [npmjs.org/package/dotenv](https://www.npmjs.org/package/dotenv)
-  - [github/motdolta/dotenv](https://github.com/motdotla/dotenv)
+
+- I highly recommend using **[assert-dotenv](https://github.com/busterc/assert-dotenv)** rather than this module, if you also want to apply environment settings from a `.env` file.
 
 ## How does it work
+
 An exception is thrown if any of these cases are true:
-  - An `assert.env` file is not found
+  - An `assert.env` (or otherwise specified) file is not found
   - The keys listed in the `assert.env` file are not set on `process.env`
 
+Otherwise, your environment settings are applied and your application executes as expected.
+
+## Why use dotenv-assert
+
+- Storing [configuration in the environment](http://www.12factor.net/config) is one of the tenets of a [twelve-factor app](http://www.12factor.net/).
+- Implicit default settings can lead to confusing troubleshooting scenarios and should be avoided entirely.
+- The `assert.env` file only lists what environment settings (keys) are required without providing values like private tokens, passwords, etc. and therefore can and should be checked into version control repositories.
 
 ## Installation
+
 ```sh
 $ npm install --save dotenv-assert
 ```
 
 ## Usage
+
 ```javascript
 /**
-*  load an assert.env file from CWD or
-*  from the nearest parent directory where assert.env is found
-*  (without a specified callback, not recommended)
+*  Synchronously load an assert.env file from CWD or
+*  from the nearest parent directory where assert.env is found.
 */
 require('dotenv-assert')();
-
-// or, same as above (with a callback, recommended)
-require('dotenv-assert')({}, function() {
-  console.log('Environment Settings Asserted!');
-});
-
-// you may include a callback on all further examples
 
 /**
 *  or, specify a custom file location
@@ -46,12 +49,32 @@ require('dotenv-assert')({
 });
 
 /**
-*  or, specify a custom file name, that will be loaded from
-*  CWD or the nearest parent directory where it is found.
+*  or, specify a custom file name (without a path) and it will
+*  be loaded from CWD or the nearest parent directory where
+*  it is found.
 */
 require('dotenv-assert')({
   filePath: 'env.config'
 });
+
+/**
+*  Asynchronous execution occurs when you provide a callback function
+*/
+require('dotenv-assert')(function(error) {
+  if(error) throw error;
+  console.log('Environment Settings Asserted!');
+});
+
+/**
+*  Asynchronous execution works with custom options also
+*/
+require('dotenv-assert')({
+    filePath: 'different.env'
+  }, function(error) {
+    if(error) throw error;
+    console.log('Environment Settings Asserted!');
+  });
+
 ```
 
 ## Simple HTTP Server Example
@@ -74,12 +97,15 @@ This example uses [**dotenv**](https://github.com/motdotla/dotenv) for applying 
 
 - ~/app/index.js
 
-  ```javascript
-  var dotenv = require('dotenv');
-  dotenv.load();
+  - Synchronous Example
 
-  require('dotenv-assert')({}, function() {
+    ```javascript
+    var dotenv = require('dotenv');
+    var dotenvAssert = require('dotenv-assert');
     var http = require('http');
+
+    dotenv.load();
+    dotenvAssert();
 
     http.createServer(function (request, response) {
       response.writeHead(200, {'Content-Type': 'text/plain'});
@@ -87,26 +113,41 @@ This example uses [**dotenv**](https://github.com/motdotla/dotenv) for applying 
     }).listen(process.env.PORT, process.env.IP);
 
     console.log('Server running at http://' + process.env.IP + ':' + process.env.PORT + '/');
-  });
-  ```
+    ```
+
+  - Asynchronous Example
+
+    ```javascript
+    var dotenv = require('dotenv');
+    var dotenvAssert = require('dotenv-assert');
+
+    dotenv.load();
+
+    dotenvAssert(function(error) {
+      if(error) throw error;
+      var http = require('http');
+
+      http.createServer(function (request, response) {
+        response.writeHead(200, {'Content-Type': 'text/plain'});
+        response.end('Hello World\n');
+      }).listen(process.env.PORT, process.env.IP);
+
+      console.log('Server running at http://' + process.env.IP + ':' + process.env.PORT + '/');
+    });
+    ```
 
 - _Start the server and see that all is well_
 
   ```sh
-  $ node index.js
+  $ node ~/app/index.js
   Server running at http://127.0.0.1:1337/
   ```
-
-## CHANGELOG
-
-- 2.0.0
-  No longer accepts an Array of settings to assert. Instead, an Options Object: `{ filePath: 'somefile.ext' }` or empty arguments are required.
 
 ## LICENSE
 
 ISC License (ISC)
 
-Copyright &copy; 2014, Buster Collings
+Copyright &copy; 2014-2015, Buster Collings
 
 Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
 
